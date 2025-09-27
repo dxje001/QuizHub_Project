@@ -1,0 +1,15 @@
+services:
+  # Development overrides
+  backend:
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./backend:/app
+    command: dotnet watch run --project /app/src/KvizHub.API/KvizHub.API.csproj --urls "http://0.0.0.0:8080"
+
+  frontend:
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true

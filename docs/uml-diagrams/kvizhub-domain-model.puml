@@ -1,0 +1,150 @@
+@startuml KvizHub Domain Model
+!theme blueprint
+title KvizHub - Domain Entity Relationships
+
+package "Domain Entities" {
+    abstract class BaseEntity {
+        + Id: Guid
+        + CreatedAt: DateTime
+        + UpdatedAt: DateTime
+    }
+
+    class User {
+        + Id: string
+        + FirstName: string
+        + LastName: string
+        + Email: string
+        + Avatar: string?
+        + CreatedAt: DateTime
+        + UpdatedAt: DateTime
+        --
+        + CreatedQuizzes: ICollection<Quiz>
+        + QuizAttempts: ICollection<QuizAttempt>
+        --
+        + FullName: string {readonly}
+    }
+
+    class Category {
+        + Name: string
+        + Description: string
+        + Icon: string
+        + Color: string
+        --
+        + Quizzes: ICollection<Quiz>
+    }
+
+    class Quiz {
+        + Title: string
+        + Description: string
+        + CategoryId: Guid
+        + Difficulty: QuizDifficulty
+        + TimeLimit: int?
+        + IsPublic: bool
+        + CreatedById: string
+        --
+        + Category: Category
+        + CreatedBy: User
+        + Questions: ICollection<Question>
+        + Attempts: ICollection<QuizAttempt>
+        --
+        + QuestionsCount: int {readonly}
+    }
+
+    class Question {
+        + QuizId: Guid
+        + Type: QuestionType
+        + QuestionText: string
+        + Points: int
+        + TimeLimit: int?
+        + Order: int
+        --
+        + Quiz: Quiz
+        + Answers: ICollection<Answer>
+        + UserAnswers: ICollection<UserAnswer>
+    }
+
+    class Answer {
+        + QuestionId: Guid
+        + AnswerText: string
+        + IsCorrect: bool
+        + Order: int
+        --
+        + Question: Question
+    }
+
+    class QuizAttempt {
+        + QuizId: Guid
+        + UserId: string
+        + StartedAt: DateTime
+        + FinishedAt: DateTime?
+        + Score: int
+        + TotalPoints: int
+        + Status: AttemptStatus
+        --
+        + Quiz: Quiz
+        + User: User
+        + UserAnswers: ICollection<UserAnswer>
+        --
+        + Percentage: decimal {readonly}
+        + Duration: TimeSpan? {readonly}
+    }
+
+    class UserAnswer {
+        + QuizAttemptId: Guid
+        + QuestionId: Guid
+        + SelectedAnswerIds: List<Guid>
+        + TextAnswer: string?
+        + IsCorrect: bool
+        + PointsEarned: int
+        + TimeSpent: long
+        --
+        + QuizAttempt: QuizAttempt
+        + Question: Question
+    }
+}
+
+package "Enums" {
+    enum QuizDifficulty {
+        Easy = 1
+        Medium = 2
+        Hard = 3
+    }
+
+    enum QuestionType {
+        MultipleChoice = 1
+        TrueFalse = 2
+        MultipleSelect = 3
+        ShortAnswer = 4
+    }
+
+    enum AttemptStatus {
+        InProgress = 1
+        Completed = 2
+        Abandoned = 3
+    }
+}
+
+' Inheritance relationships
+BaseEntity <|-- Category
+BaseEntity <|-- Quiz
+BaseEntity <|-- Question
+BaseEntity <|-- Answer
+BaseEntity <|-- QuizAttempt
+BaseEntity <|-- UserAnswer
+
+' One-to-Many relationships
+User ||--o{ Quiz : "creates"
+Category ||--o{ Quiz : "contains"
+Quiz ||--o{ Question : "has"
+Question ||--o{ Answer : "has"
+Quiz ||--o{ QuizAttempt : "attempted"
+User ||--o{ QuizAttempt : "attempts"
+QuizAttempt ||--o{ UserAnswer : "contains"
+Question ||--o{ UserAnswer : "answered"
+
+' Enum relationships
+Quiz ..> QuizDifficulty : "uses"
+Question ..> QuestionType : "uses"
+QuizAttempt ..> AttemptStatus : "uses"
+
+@enduml

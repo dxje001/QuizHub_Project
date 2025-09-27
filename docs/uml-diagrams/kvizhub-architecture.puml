@@ -1,0 +1,102 @@
+@startuml KvizHub Clean Architecture
+!theme blueprint
+title KvizHub - Clean Architecture Layers
+
+package "Presentation Layer" {
+    package "Frontend (React)" {
+        component [Pages] as FrontendPages
+        component [Components] as FrontendComponents
+        component [Services] as FrontendServices
+        component [Stores] as FrontendStores
+        component [Types] as FrontendTypes
+    }
+
+    package "API Layer" {
+        component [Controllers] as APIControllers
+        component [Middleware] as APIMiddleware
+        component [Extensions] as APIExtensions
+    }
+}
+
+package "Application Layer" {
+    component [DTOs] as AppDTOs
+    component [Services] as AppServices
+    component [Interfaces] as AppInterfaces
+    component [Mappings] as AppMappings
+    component [Validators] as AppValidators
+}
+
+package "Domain Layer" {
+    component [Entities] as DomainEntities
+    component [Enums] as DomainEnums
+    component [Interfaces] as DomainInterfaces
+}
+
+package "Infrastructure Layer" {
+    component [Data Context] as InfraData
+    component [Repositories] as InfraRepos
+    component [Services] as InfraServices
+    component [Migrations] as InfraMigrations
+}
+
+package "External Dependencies" {
+    database PostgreSQL
+    component Redis
+    component Docker
+}
+
+' Frontend dependencies
+FrontendPages --> FrontendComponents
+FrontendPages --> FrontendServices
+FrontendServices --> FrontendStores
+FrontendServices --> FrontendTypes
+FrontendComponents --> FrontendTypes
+
+' Frontend to API communication
+FrontendServices --> APIControllers : "HTTP/REST"
+
+' API layer dependencies
+APIControllers --> AppServices
+APIControllers --> AppDTOs
+APIMiddleware --> AppServices
+
+' Application layer dependencies
+AppServices --> AppInterfaces
+AppServices --> DomainEntities
+AppServices --> AppDTOs
+AppMappings --> DomainEntities
+AppMappings --> AppDTOs
+AppValidators --> AppDTOs
+
+' Infrastructure dependencies
+InfraServices --> AppInterfaces : "implements"
+InfraRepos --> DomainInterfaces : "implements"
+InfraData --> DomainEntities
+InfraData --> PostgreSQL
+InfraMigrations --> PostgreSQL
+
+' External dependencies
+InfraServices --> PostgreSQL
+InfraServices --> Redis
+Docker --> PostgreSQL
+Docker --> Redis
+
+note right of DomainLayer
+  Core business logic
+  No external dependencies
+  Entities, Value Objects, Enums
+end note
+
+note right of AppInterfaces
+  Application contracts
+  Service interfaces
+  Repository interfaces
+end note
+
+note left of FrontendServices
+  API communication
+  State management
+  Business logic
+end note
+
+@enduml
