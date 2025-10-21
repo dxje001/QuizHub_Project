@@ -11,7 +11,12 @@
       "Bash(docker exec:*)",
       "Bash(docker-compose restart:*)",
       "Bash(timeout 5 docker logs kvizhub-frontend --follow)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(docker --version)",
+      "Bash(docker-compose --version)",
+      "Bash(docker compose version)",
+      "Bash(test -f .env)",
+      "Bash(where aws)"
     ],
     "deny": [],
     "ask": []

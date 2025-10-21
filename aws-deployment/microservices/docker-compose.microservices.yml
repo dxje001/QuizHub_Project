@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # Nginx API Gateway - Routes requests to microservices
+  api-gateway:
+    image: nginx:alpine
+    container_name: kvizhub-api-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - quiz-service
+      - execution-service
+      - leaderboard-service
+    restart: unless-stopped
+    mem_limit: 128m
+    networks:
+      - kvizhub-network
+
+  # Microservice 1: Authentication & User Management
+  auth-service:
+    build:
+      context: ../../backend
+      dockerfile: src/KvizHub.AuthService/Dockerfile
+    container_name: auth-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${AUTH_DB_CONNECTION}
+      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Issuer=KvizHub
+      - JwtSettings__Audience=KvizHub
+      - JwtSettings__ExpiryMinutes=60
+      - AWS_REGION=us-east-1
+      - S3_BUCKET_NAME=${S3_BUCKET_AVATARS}
+    ports:
+      - "5001:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - kvizhub-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Microservice 2: Quiz Management
+  quiz-service:
+    build:
+      context: ../../backend
+      dockerfile: src/KvizHub.QuizService/Dockerfile
+    container_name: quiz-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${QUIZ_DB_CONNECTION}
+      - AuthService__Url=http://auth-service:80
+      - AWS_REGION=us-east-1
+      - S3_BUCKET_NAME=${S3_BUCKET_QUIZ_IMAGES}
+    ports:
+      - "5002:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - kvizhub-network
+    depends_on:
+      - auth-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Microservice 3: Quiz Execution & Submission
+  execution-service:
+    build:
+      context: ../../backend
+      dockerfile: src/KvizHub.ExecutionService/Dockerfile
+    container_name: execution-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${RESULTS_DB_CONNECTION}
+      - QuizService__Url=http://quiz-service:80
+      - AuthService__Url=http://auth-service:80
+      - AWS_REGION=us-east-1
+      - SQS_QUEUE_URL=${SQS_SCORING_QUEUE}
+      - DYNAMODB_SESSION_TABLE=quiz-sessions
+    ports:
+      - "5003:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - kvizhub-network
+    depends_on:
+      - auth-service
+      - quiz-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Microservice 4: Leaderboard & Analytics
+  leaderboard-service:
+    build:
+      context: ../../backend
+      dockerfile: src/KvizHub.LeaderboardService/Dockerfile
+    container_name: leaderboard-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${RESULTS_DB_CONNECTION}
+      - AWS_REGION=us-east-1
+      - DYNAMODB_LEADERBOARD_TABLE=leaderboard
+      - SQS_QUEUE_URL=${SQS_SCORING_QUEUE}
+      - ExecutionService__Url=http://execution-service:80
+    ports:
+      - "5004:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - kvizhub-network
+    depends_on:
+      - execution-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  kvizhub-network:
+    driver: bridge
+
+# Note: Databases (RDS) are external and not in docker-compose
+# DynamoDB and SQS are also external AWS services

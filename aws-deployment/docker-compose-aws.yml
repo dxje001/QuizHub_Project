@@ -1,0 +1,91 @@
+# Docker Compose for AWS EC2 Microservices Deployment
+# This runs microservices architecture on single EC2 instance
+
+version: '3.8'
+
+services:
+  # Auth Microservice
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: auth-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=kvizhub-db.c8fmu8q6u6th.us-east-1.rds.amazonaws.com;Database=kvizhub;Username=postgres;Password=KvizHub2024SecurePassword!
+      - JwtSettings__Secret=your-super-secure-jwt-secret-key-here-make-it-long-and-random
+      - JwtSettings__ExpiryHours=24
+    ports:
+      - "5001:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    networks:
+      - microservices-network
+
+  # Quiz Microservice
+  quiz-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: quiz-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=kvizhub-db.c8fmu8q6u6th.us-east-1.rds.amazonaws.com;Database=kvizhub;Username=postgres;Password=KvizHub2024SecurePassword!
+      - JwtSettings__Secret=your-super-secure-jwt-secret-key-here-make-it-long-and-random
+      - JwtSettings__ExpiryHours=24
+    ports:
+      - "5002:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+
+  # Execution Microservice
+  execution-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: execution-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=kvizhub-db.c8fmu8q6u6th.us-east-1.rds.amazonaws.com;Database=kvizhub;Username=postgres;Password=KvizHub2024SecurePassword!
+      - JwtSettings__Secret=your-super-secure-jwt-secret-key-here-make-it-long-and-random
+      - JwtSettings__ExpiryHours=24
+    ports:
+      - "5003:80"
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on:
+      - quiz-service
+    networks:
+      - microservices-network
+
+  # Nginx API Gateway
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-api-gateway
+    ports:
+      - "80:80"
+      - "8080:80"
+    volumes:
+      - ./nginx-aws.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - quiz-service
+      - execution-service
+    restart: unless-stopped
+    mem_limit: 128m
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge

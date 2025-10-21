@@ -1,0 +1,134 @@
+# Docker Compose for Microservices SIMULATION
+# This uses the SAME codebase but simulates microservices with Nginx routing
+# Perfect for performance comparison without refactoring code!
+
+services:
+  # PostgreSQL Database (shared)
+  postgres:
+    image: postgres:15-alpine
+    container_name: kvizhub-postgres-micro
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kvizhub}
+      POSTGRES_USER: ${POSTGRES_USER:-kvizhub_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kvizhub_password_2024}
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with monolith
+    volumes:
+      - postgres_data_micro:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # "Auth Microservice" - Same API but isolated
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: auth-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-kvizhub};Username=${POSTGRES_USER:-kvizhub_user};Password=${POSTGRES_PASSWORD:-kvizhub_password_2024}
+      - JwtSettings__Secret=${JWT_SECRET:-your-super-secure-jwt-secret-key-here-make-it-long-and-random}
+      - JwtSettings__ExpiryHours=${JWT_EXPIRY_HOURS:-24}
+      - SERVICE_NAME=AuthService
+    ports:
+      - "5001:8080"
+    depends_on:
+      - postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+
+  # "Quiz Microservice" - Same API but isolated
+  quiz-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: quiz-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-kvizhub};Username=${POSTGRES_USER:-kvizhub_user};Password=${POSTGRES_PASSWORD:-kvizhub_password_2024}
+      - JwtSettings__Secret=${JWT_SECRET:-your-super-secure-jwt-secret-key-here-make-it-long-and-random}
+      - JwtSettings__ExpiryHours=${JWT_EXPIRY_HOURS:-24}
+      - SERVICE_NAME=QuizService
+    ports:
+      - "5002:8080"
+    depends_on:
+      - postgres
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+
+  # "Execution Microservice" - Same API but isolated
+  execution-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: execution-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-kvizhub};Username=${POSTGRES_USER:-kvizhub_user};Password=${POSTGRES_PASSWORD:-kvizhub_password_2024}
+      - JwtSettings__Secret=${JWT_SECRET:-your-super-secure-jwt-secret-key-here-make-it-long-and-random}
+      - JwtSettings__ExpiryHours=${JWT_EXPIRY_HOURS:-24}
+      - SERVICE_NAME=ExecutionService
+    ports:
+      - "5003:8080"
+    depends_on:
+      - postgres
+      - quiz-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+
+  # Nginx API Gateway
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-api-gateway
+    ports:
+      - "8080:80"  # Main entry point for "microservices"
+    volumes:
+      - ./aws-deployment/microservices/nginx-simulation.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - quiz-service
+      - execution-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Frontend (same as monolith)
+  frontend-micro:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: kvizhub-frontend-micro
+    environment:
+      - VITE_API_URL=http://localhost:8080  # Points to Nginx
+    ports:
+      - "3051:5173"  # Different port
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - nginx-gateway
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data_micro:
+
+networks:
+  microservices-network:
+    driver: bridge
