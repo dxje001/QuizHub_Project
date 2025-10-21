@@ -28,6 +28,20 @@ export const getDifficultyColor = (difficulty: number | string) => {
   }
 }
 
+export const getDifficultyBadgeVariant = (difficulty: number | string): 'success' | 'warning' | 'danger' | 'secondary' => {
+  const label = getDifficultyLabel(difficulty)
+  switch (label.toLowerCase()) {
+    case 'easy':
+      return 'success'
+    case 'medium':
+      return 'warning'
+    case 'hard':
+      return 'danger'
+    default:
+      return 'secondary'
+  }
+}
+
 export const getQuestionTypeLabel = (type: number | string): string => {
   if (typeof type === 'number') {
     switch (type) {

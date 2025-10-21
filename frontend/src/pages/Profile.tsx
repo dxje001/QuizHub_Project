@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useQuiz } from '@/hooks/useQuiz'
-import { QuizAttempt, PaginatedResponse, User } from '@/types'
+import { QuizAttempt, PaginatedResponse } from '@/types'
 import authService from '@/services/authService'
 import toast from 'react-hot-toast'
 import {
@@ -17,8 +17,18 @@ import {
   ClockIcon,
   PencilIcon,
   XMarkIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  FireIcon,
+  AcademicCapIcon,
+  ArrowTrendingUpIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { getDifficultyLabel, getDifficultyBadgeVariant } from '@/utils/difficulty'
 
 const Profile = () => {
   const { user, setUser } = useAuthStore()
@@ -71,36 +81,6 @@ const Profile = () => {
     setSearchParams({ tab })
     if (tab === 'attempts') {
       setCurrentPage(1)
-    }
-  }
-
-  const getDifficultyLabel = (difficulty: number | string): string => {
-    if (typeof difficulty === 'number') {
-      switch (difficulty) {
-        case 1:
-          return 'Easy'
-        case 2:
-          return 'Medium'
-        case 3:
-          return 'Hard'
-        default:
-          return 'Unknown'
-      }
-    }
-    return difficulty
-  }
-
-  const getDifficultyColor = (difficulty: number | string) => {
-    const label = getDifficultyLabel(difficulty)
-    switch (label.toLowerCase()) {
-      case 'easy':
-        return 'text-green-600 bg-green-100'
-      case 'medium':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'hard':
-        return 'text-red-600 bg-red-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
     }
   }
 
@@ -228,175 +208,228 @@ const Profile = () => {
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
   }
 
+  // Get user initials
+  const userInitials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase()
+
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-20 w-20 rounded-full bg-primary-600 flex items-center justify-center text-white text-2xl font-bold mr-6">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Profile Header Card */}
+      <div className="card-premium p-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center text-white text-3xl font-bold shadow-glow">
+                {userInitials}
+              </div>
+              <div className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-accent-100 border-2 border-white shadow-soft">
+                <UserIcon className="h-5 w-5 text-accent-600" />
+              </div>
             </div>
+
+            {/* User Info */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-4xl font-bold text-secondary-900 mb-2">
                 {user?.firstName} {user?.lastName}
               </h1>
-              <p className="text-gray-600 mt-1">{user?.email}</p>
-              <div className="flex items-center mt-2 text-sm text-gray-500">
-                <CalendarDaysIcon className="h-4 w-4 mr-1" />
+              <p className="text-lg text-secondary-600 mb-3">{user?.email}</p>
+              <div className="flex items-center gap-2 text-secondary-600">
+                <CalendarDaysIcon className="h-5 w-5" />
                 <span>Member since {user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
               </div>
             </div>
           </div>
-          <div className="flex space-x-3">
-            <button
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button
+              variant="primary"
+              size="md"
               onClick={() => setIsEditModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              className="gap-2"
             >
-              <PencilIcon className="h-4 w-4 mr-2" />
+              <PencilIcon className="h-4 w-4" />
               Edit Profile
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => setIsPasswordModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="gap-2"
             >
-              <LockClosedIcon className="h-4 w-4 mr-2" />
+              <LockClosedIcon className="h-4 w-4" />
               Change Password
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Performance Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <TrophyIcon className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Total Quizzes</h3>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalQuizzes}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="card-premium p-6 animate-scale-in">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary-600 to-primary-500 shadow-soft">
+                <AcademicCapIcon className="h-6 w-6 text-white" />
               </div>
+              <div>
+                <div className="text-sm text-secondary-600">Total Quizzes</div>
+                <div className="text-3xl font-bold text-secondary-900">{stats.totalQuizzes}</div>
+              </div>
+            </div>
+            <div className="w-full bg-secondary-200 rounded-full h-2">
+              <div className="h-2 bg-gradient-to-r from-primary-600 to-primary-500 rounded-full w-full" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <ChartBarIcon className="h-8 w-8 text-green-600 mr-3" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Average Score</h3>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageScore}%</p>
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '50ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-soft">
+                <ChartBarIcon className="h-6 w-6 text-white" />
               </div>
+              <div>
+                <div className="text-sm text-secondary-600">Average Score</div>
+                <div className="text-3xl font-bold text-secondary-900">{stats.averageScore}%</div>
+              </div>
+            </div>
+            <div className="w-full bg-secondary-200 rounded-full h-2">
+              <div
+                className="h-2 bg-gradient-to-r from-accent-600 to-accent-500 rounded-full transition-all duration-500"
+                style={{ width: `${stats.averageScore}%` }}
+              />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <TrophyIcon className="h-8 w-8 text-yellow-600 mr-3" />
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '100ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-warning-600 to-warning-500 shadow-soft">
+                <TrophyIcon className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Best Score</h3>
-                <p className="text-2xl font-bold text-gray-900">{stats.bestScore}%</p>
+                <div className="text-sm text-secondary-600">Best Score</div>
+                <div className="text-3xl font-bold text-secondary-900">{stats.bestScore}%</div>
               </div>
             </div>
+            <Badge variant="warning" className="gap-1">
+              <FireIcon className="h-3 w-3" />
+              Personal Best
+            </Badge>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <ChartBarIcon className={`h-8 w-8 mr-3 ${
-                stats.recentImprovement > 0 ? 'text-green-600' :
-                stats.recentImprovement < 0 ? 'text-red-600' : 'text-gray-600'
-              }`} />
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '150ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`p-3 rounded-xl shadow-soft ${
+                stats.recentImprovement > 0
+                  ? 'bg-gradient-to-br from-accent-600 to-accent-500'
+                  : stats.recentImprovement < 0
+                  ? 'bg-gradient-to-br from-danger-600 to-danger-500'
+                  : 'bg-gradient-to-br from-secondary-600 to-secondary-500'
+              }`}>
+                <ArrowTrendingUpIcon className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Recent Trend</h3>
-                <p className={`text-2xl font-bold ${
-                  stats.recentImprovement > 0 ? 'text-green-600' :
-                  stats.recentImprovement < 0 ? 'text-red-600' : 'text-gray-900'
+                <div className="text-sm text-secondary-600">Recent Trend</div>
+                <div className={`text-3xl font-bold ${
+                  stats.recentImprovement > 0 ? 'text-accent-600' :
+                  stats.recentImprovement < 0 ? 'text-danger-600' : 'text-secondary-900'
                 }`}>
                   {stats.recentImprovement > 0 ? '+' : ''}{stats.recentImprovement}%
-                </p>
+                </div>
               </div>
             </div>
+            <Badge variant={stats.recentImprovement >= 0 ? 'success' : 'danger'}>
+              {stats.recentImprovement >= 0 ? 'Improving' : 'Needs Work'}
+            </Badge>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex">
+      <div className="card-premium overflow-hidden">
+        <div className="border-b border-secondary-200">
+          <nav className="flex">
             <button
               onClick={() => handleTabChange('profile')}
-              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 py-4 px-8 text-sm font-semibold border-b-2 transition-all ${
                 activeTab === 'profile'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary-600 text-primary-600 bg-primary-50/50'
+                  : 'border-transparent text-secondary-600 hover:text-secondary-900 hover:border-secondary-300'
               }`}
             >
-              <UserIcon className="h-4 w-4 inline mr-2" />
+              <UserIcon className="h-5 w-5" />
               Profile Information
             </button>
             <button
               onClick={() => handleTabChange('attempts')}
-              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 py-4 px-8 text-sm font-semibold border-b-2 transition-all ${
                 activeTab === 'attempts'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary-600 text-primary-600 bg-primary-50/50'
+                  : 'border-transparent text-secondary-600 hover:text-secondary-900 hover:border-secondary-300'
               }`}
             >
-              <TrophyIcon className="h-4 w-4 inline mr-2" />
+              <TrophyIcon className="h-5 w-5" />
               Quiz History
             </button>
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-8">
           {activeTab === 'profile' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                  <Label>First Name</Label>
+                  <div className="mt-2 p-4 bg-secondary-50 border border-secondary-200 rounded-xl text-secondary-900 font-medium">
                     {user?.firstName || 'N/A'}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                  <Label>Last Name</Label>
+                  <div className="mt-2 p-4 bg-secondary-50 border border-secondary-200 rounded-xl text-secondary-900 font-medium">
                     {user?.lastName || 'N/A'}
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                <Label>Email Address</Label>
+                <div className="mt-2 p-4 bg-secondary-50 border border-secondary-200 rounded-xl text-secondary-900 font-medium">
                   {user?.email || 'N/A'}
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">Account Settings</h3>
-                  <div className="flex space-x-3">
-                    <button
+              <div className="pt-6 border-t border-secondary-200">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold text-secondary-900">Account Settings</h3>
+                      <SparklesIcon className="h-5 w-5 text-primary-600" />
+                    </div>
+                    <p className="text-secondary-600">
+                      Manage your profile information and account security settings.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setIsEditModalOpen(true)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      className="gap-2"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit Information
-                    </button>
-                    <button
+                      <PencilIcon className="h-4 w-4" />
+                      Edit Info
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setIsPasswordModalOpen(true)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      className="gap-2"
                     >
-                      <LockClosedIcon className="h-4 w-4 mr-1" />
-                      Change Password
-                    </button>
+                      <LockClosedIcon className="h-4 w-4" />
+                      Password
+                    </Button>
                   </div>
                 </div>
-                <p className="text-gray-500 text-sm mt-2">
-                  Manage your profile information and account security settings.
-                </p>
               </div>
             </div>
           )}
@@ -404,135 +437,149 @@ const Profile = () => {
           {activeTab === 'attempts' && (
             <div>
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading quiz history...</p>
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Spinner size="lg" />
+                  <p className="mt-4 text-secondary-600 text-lg">Loading quiz history...</p>
                 </div>
               ) : userAttempts && userAttempts.data.length > 0 ? (
                 <div className="space-y-4">
-                  {userAttempts.data.map((attempt) => (
+                  {userAttempts.data.map((attempt, index) => (
                     <div
                       key={attempt.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                      className="card-interactive p-6 animate-fade-in-up"
+                      style={{ animationDelay: `${index * 30}ms` }}
                     >
-                      <div className="flex items-center flex-1 min-w-0">
-                        <div className="flex-shrink-0 mr-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        {/* Left Section */}
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          {/* Status Icon */}
+                          <div className="flex-shrink-0">
+                            {attempt.status === 1 ? (
+                              <div className={`flex items-center justify-center w-14 h-14 rounded-xl shadow-soft ${
+                                attempt.percentage >= 80
+                                  ? 'bg-gradient-to-br from-accent-600 to-accent-500'
+                                  : attempt.percentage >= 60
+                                  ? 'bg-gradient-to-br from-warning-600 to-warning-500'
+                                  : 'bg-gradient-to-br from-danger-600 to-danger-500'
+                              }`}>
+                                <CheckCircleIcon className="h-7 w-7 text-white" />
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-secondary-100 shadow-soft">
+                                <XCircleIcon className="h-7 w-7 text-secondary-400" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Attempt Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-xl font-bold text-secondary-900 truncate">
+                                {attempt.quiz.title}
+                              </h3>
+                              {attempt.status === 1 && (
+                                <Badge
+                                  variant={
+                                    attempt.percentage >= 80 ? 'success' :
+                                    attempt.percentage >= 60 ? 'warning' : 'danger'
+                                  }
+                                  size="lg"
+                                >
+                                  {Math.round(attempt.percentage)}%
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-secondary-600">
+                              <div className="flex items-center gap-1">
+                                <CalendarDaysIcon className="h-4 w-4" />
+                                <span>{formatDate(attempt.startedAt)}</span>
+                              </div>
+                              {attempt.status === 1 && (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <TrophyIcon className="h-4 w-4" />
+                                    <span>{attempt.score}/{attempt.totalPoints} pts</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <ClockIcon className="h-4 w-4" />
+                                    <span>{formatDuration(attempt.startedAt, attempt.finishedAt || new Date().toISOString())}</span>
+                                  </div>
+                                </>
+                              )}
+                              <Badge variant={getDifficultyBadgeVariant(attempt.quiz.difficulty)} size="sm">
+                                {getDifficultyLabel(attempt.quiz.difficulty)}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Section - Action Button */}
+                        <div className="flex-shrink-0">
                           {attempt.status === 1 ? (
-                            <div className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                              attempt.percentage >= 80 ? 'bg-green-100 text-green-600' :
-                              attempt.percentage >= 60 ? 'bg-yellow-100 text-yellow-600' :
-                              'bg-red-100 text-red-600'
-                            }`}>
-                              <CheckCircleIcon className="h-6 w-6" />
-                            </div>
+                            <a href={`/results/${attempt.id}`}>
+                              <Button variant="primary" size="md" className="gap-2">
+                                <EyeIcon className="h-4 w-4" />
+                                View Results
+                              </Button>
+                            </a>
                           ) : (
-                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 text-gray-400">
-                              <XCircleIcon className="h-6 w-6" />
-                            </div>
+                            <a href={`/quizzes/${attempt.quizId}/take`}>
+                              <Button variant="secondary" size="md" className="gap-2">
+                                <PlayIcon className="h-4 w-4" />
+                                Resume
+                              </Button>
+                            </a>
                           )}
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium text-gray-900 truncate">
-                              {attempt.quiz.title}
-                            </h3>
-                            {attempt.status === 1 && (
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                attempt.percentage >= 80 ? 'bg-green-100 text-green-800' :
-                                attempt.percentage >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {Math.round(attempt.percentage)}% Score
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center text-sm text-gray-500 space-x-4">
-                            <div className="flex items-center">
-                              <CalendarDaysIcon className="h-4 w-4 mr-1" />
-                              <span>{formatDate(attempt.startedAt)}</span>
-                            </div>
-                            {attempt.status === 1 && (
-                              <>
-                                <div className="flex items-center">
-                                  <TrophyIcon className="h-4 w-4 mr-1" />
-                                  <span>{attempt.score}/{attempt.totalPoints} points</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <ClockIcon className="h-4 w-4 mr-1" />
-                                  <span>{formatDuration(attempt.startedAt, attempt.finishedAt || new Date().toISOString())}</span>
-                                </div>
-                              </>
-                            )}
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getDifficultyColor(attempt.quiz.difficulty)}`}>
-                              {getDifficultyLabel(attempt.quiz.difficulty)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center ml-4 space-x-2">
-                        {attempt.status === 1 ? (
-                          <a
-                            href={`/results/${attempt.id}`}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
-                          >
-                            <EyeIcon className="h-4 w-4 mr-1" />
-                            View Results
-                          </a>
-                        ) : (
-                          <a
-                            href={`/quizzes/${attempt.quizId}/take`}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
-                          >
-                            <PlayIcon className="h-4 w-4 mr-1" />
-                            Resume
-                          </a>
-                        )}
                       </div>
                     </div>
                   ))}
 
                   {/* Pagination */}
                   {userAttempts.totalPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-gray-200 pt-6">
-                      <div className="text-sm text-gray-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-secondary-200">
+                      <div className="text-sm text-secondary-600">
                         Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, userAttempts.totalCount)} of {userAttempts.totalCount} attempts
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                           disabled={!userAttempts.hasPreviousPage}
-                          className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Previous
-                        </button>
-                        <span className="text-sm text-gray-700">
+                        </Button>
+                        <span className="text-sm font-semibold text-secondary-700 px-4">
                           Page {currentPage} of {userAttempts.totalPages}
                         </span>
-                        <button
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setCurrentPage(Math.min(userAttempts.totalPages, currentPage + 1))}
                           disabled={!userAttempts.hasNextPage}
-                          className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Next
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <TrophyIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Quiz Attempts Yet</h3>
-                  <p className="text-gray-500 mb-6">Start taking quizzes to track your progress and performance!</p>
-                  <a
-                    href="/quizzes"
-                    className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                  >
-                    <PlayIcon className="h-5 w-5 mr-2" />
-                    Browse Quizzes
+                <div className="text-center py-20">
+                  <div className="inline-flex p-6 rounded-2xl bg-gradient-to-br from-primary-50 to-accent-50 mb-6">
+                    <TrophyIcon className="h-16 w-16 text-primary-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-secondary-900 mb-2">No Quiz Attempts Yet</h3>
+                  <p className="text-secondary-600 mb-8 max-w-md mx-auto">
+                    Start taking quizzes to track your progress and performance!
+                  </p>
+                  <a href="/quizzes">
+                    <Button variant="primary" size="lg" className="gap-2">
+                      <PlayIcon className="h-5 w-5" />
+                      Browse Quizzes
+                    </Button>
                   </a>
                 </div>
               )}
@@ -543,66 +590,58 @@ const Profile = () => {
 
       {/* Edit Profile Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Edit Profile</h3>
+        <div className="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="card-premium w-full max-w-md p-8 animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-secondary-900">Edit Profile</h3>
               <button
                 onClick={closeEditModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-secondary-400 hover:text-secondary-600 transition-colors"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
-            <form onSubmit={handleEditProfile} className="space-y-4">
+            <form onSubmit={handleEditProfile} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
+                <Label required>First Name</Label>
+                <Input
                   type="text"
                   value={editForm.firstName}
                   onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your first name"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
+                <Label required>Last Name</Label>
+                <Input
                   type="text"
                   value={editForm.lastName}
                   onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your last name"
                   required
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4">
-                <button
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={closeEditModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                   disabled={isLoading}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={isLoading}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center"
+                  isLoading={isLoading}
                 >
-                  {isLoading && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  )}
                   Save Changes
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -611,42 +650,36 @@ const Profile = () => {
 
       {/* Change Password Modal */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Change Password</h3>
+        <div className="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="card-premium w-full max-w-md p-8 animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-secondary-900">Change Password</h3>
               <button
                 onClick={closePasswordModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-secondary-400 hover:text-secondary-600 transition-colors"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            <form onSubmit={handleChangePassword} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Password *
-                </label>
-                <input
+                <Label required>Current Password</Label>
+                <Input
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your current password"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password *
-                </label>
-                <input
+                <Label required>New Password</Label>
+                <Input
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter your new password"
                   required
                   minLength={6}
@@ -654,39 +687,34 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password *
-                </label>
-                <input
+                <Label required>Confirm New Password</Label>
+                <Input
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Confirm your new password"
                   required
                   minLength={6}
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4">
-                <button
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={closePasswordModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                   disabled={isLoading}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={isLoading}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center"
+                  isLoading={isLoading}
                 >
-                  {isLoading && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  )}
                   Change Password
-                </button>
+                </Button>
               </div>
             </form>
           </div>

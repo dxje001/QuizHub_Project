@@ -4,7 +4,17 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  RocketLaunchIcon,
+  CheckCircleIcon,
+  UserGroupIcon,
+  AcademicCapIcon
+} from '@heroicons/react/24/outline'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -43,158 +53,244 @@ const Register = () => {
     }
   }
 
+  const benefits = [
+    'Access to 500+ curated quizzes',
+    'Track your progress and performance',
+    'Compete on global leaderboards',
+    'Earn achievements and badges',
+    'Join an active learning community'
+  ]
+
   return (
-    <div className="max-w-md mx-auto">
-      <div className="card">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join KvizHub today</p>
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center py-12">
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
+        {/* Left Side - Branding */}
+        <div className="hidden lg:block space-y-8 animate-fade-in-up">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent-100 border border-accent-200 rounded-full text-accent-700 text-sm font-medium mb-6">
+              <RocketLaunchIcon className="h-4 w-4" />
+              Start Your Journey
+            </div>
+            <h1 className="text-5xl font-bold text-secondary-900 mb-4">
+              Join{' '}
+              <span className="text-gradient">10,000+ Learners</span>
+            </h1>
+            <p className="text-xl text-secondary-600 leading-relaxed">
+              Create your free account and unlock access to our comprehensive quiz platform. Start learning, competing, and achieving today.
+            </p>
+          </div>
+
+          {/* Benefits List */}
+          <div className="space-y-3">
+            {benefits.map((benefit, index) => (
+              <div
+                key={benefit}
+                className="flex items-center gap-3 animate-fade-in-up"
+                style={{ animationDelay: `${(index + 1) * 100}ms` }}
+              >
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-100 flex items-center justify-center">
+                  <CheckCircleIcon className="h-4 w-4 text-accent-600" />
+                </div>
+                <span className="text-secondary-700">{benefit}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Social Proof */}
+          <div className="flex items-center gap-6 pt-4">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-accent-600 border-2 border-white flex items-center justify-center text-white text-sm font-semibold"
+                >
+                  {String.fromCharCode(64 + i)}
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-secondary-900">Join our community</div>
+              <div className="text-xs text-secondary-600">10,000+ active learners</div>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                First Name
-              </label>
-              <input
-                id="firstName"
-                type="text"
-                {...register('firstName')}
-                className="input-field"
-                placeholder="John"
-              />
-              {errors.firstName && (
-                <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
-              )}
+        {/* Right Side - Register Form */}
+        <div className="w-full max-w-md mx-auto lg:mx-0 animate-fade-in-up animation-delay-200">
+          <div className="card-premium p-8">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-accent-600 rounded-2xl shadow-soft mb-4">
+                <RocketLaunchIcon className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-secondary-900 mb-2">Create Account</h2>
+              <p className="text-secondary-600">Start your learning journey today</p>
             </div>
 
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name
-              </label>
-              <input
-                id="lastName"
-                type="text"
-                {...register('lastName')}
-                className="input-field"
-                placeholder="Doe"
-              />
-              {errors.lastName && (
-                <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
-              )}
-            </div>
-          </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName" required>First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    {...register('firstName')}
+                    error={!!errors.firstName}
+                    placeholder="John"
+                    className="mt-1"
+                  />
+                  {errors.firstName && (
+                    <p className="input-error">{errors.firstName.message}</p>
+                  )}
+                </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className="input-field"
-              placeholder="john@example.com"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
+                <div>
+                  <Label htmlFor="lastName" required>Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    {...register('lastName')}
+                    error={!!errors.lastName}
+                    placeholder="Doe"
+                    className="mt-1"
+                  />
+                  {errors.lastName && (
+                    <p className="input-error">{errors.lastName.message}</p>
+                  )}
+                </div>
+              </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                {...register('password')}
-                className="input-field pr-10"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <EyeIcon className="h-5 w-5 text-gray-400" />
+              {/* Email Field */}
+              <div>
+                <Label htmlFor="email" required>Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  error={!!errors.email}
+                  placeholder="you@example.com"
+                  className="mt-1"
+                />
+                {errors.email && (
+                  <p className="input-error">{errors.email.message}</p>
                 )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-            )}
-          </div>
+              </div>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                {...register('confirmPassword')}
-                className="input-field pr-10"
-                placeholder="Confirm your password"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <EyeIcon className="h-5 w-5 text-gray-400" />
+              {/* Password Field */}
+              <div>
+                <Label htmlFor="password" required>Password</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    error={!!errors.password}
+                    placeholder="Minimum 8 characters"
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-secondary-400 hover:text-secondary-600 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="input-error">{errors.password.message}</p>
                 )}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-            )}
-          </div>
+              </div>
 
-          <div className="flex items-center">
-            <input
-              id="terms"
-              type="checkbox"
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              required
-            />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
-              I agree to the{' '}
-              <Link to="/terms" className="text-primary-600 hover:text-primary-500">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link to="/privacy" className="text-primary-600 hover:text-primary-500">
-                Privacy Policy
+              {/* Confirm Password Field */}
+              <div>
+                <Label htmlFor="confirmPassword" required>Confirm Password</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    {...register('confirmPassword')}
+                    error={!!errors.confirmPassword}
+                    placeholder="Re-enter your password"
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-secondary-400 hover:text-secondary-600 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="input-error">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              {/* Terms Checkbox */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  className="mt-1 w-4 h-4 rounded border-secondary-300 text-primary-600 focus:ring-4 focus:ring-primary-100 transition-all"
+                  required
+                />
+                <label htmlFor="terms" className="text-sm text-secondary-600 leading-relaxed">
+                  I agree to the{' '}
+                  <Link to="/terms" className="link">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="link">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full"
+                size="lg"
+                isLoading={isLoading}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating account...' : 'Create Account'}
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-secondary-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-secondary-500">Already have an account?</span>
+              </div>
+            </div>
+
+            {/* Sign In Link */}
+            <div className="text-center">
+              <p className="text-secondary-600 mb-4">
+                Sign in to access your dashboard
+              </p>
+              <Link to="/login">
+                <Button variant="secondary" className="w-full" size="lg">
+                  Sign In
+                </Button>
               </Link>
-            </label>
+            </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">
-              Sign in here
-            </Link>
-          </p>
         </div>
       </div>
     </div>

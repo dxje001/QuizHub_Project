@@ -8,8 +8,15 @@ import {
   UserIcon,
   ChartBarIcon,
   CalendarDaysIcon,
-  FunnelIcon
+  FunnelIcon,
+  FireIcon,
+  SparklesIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 
 const Leaderboard = () => {
   const { getLeaderboard, getCategories, getQuizzes, loading } = useQuiz()
@@ -93,11 +100,16 @@ const Leaderboard = () => {
     return `#${rank}`
   }
 
-  const getRankColor = (rank: number): string => {
-    if (rank === 1) return 'text-yellow-600 bg-yellow-50'
-    if (rank === 2) return 'text-gray-600 bg-gray-50'
-    if (rank === 3) return 'text-orange-600 bg-orange-50'
-    return 'text-gray-700 bg-gray-50'
+  const getRankGradient = (rank: number): string => {
+    if (rank === 1) return 'from-warning-600 to-warning-500'
+    if (rank === 2) return 'from-secondary-500 to-secondary-400'
+    if (rank === 3) return 'from-orange-600 to-orange-500'
+    return 'from-secondary-200 to-secondary-100'
+  }
+
+  const getRankTextColor = (rank: number): string => {
+    if (rank <= 3) return 'text-white'
+    return 'text-secondary-700'
   }
 
   const formatDuration = (duration: string): string => {
@@ -120,52 +132,60 @@ const Leaderboard = () => {
 
   if (loading && !leaderboard) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading leaderboard...</p>
-        </div>
+      <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center">
+        <Spinner size="lg" />
+        <p className="mt-4 text-secondary-600 text-lg">Loading leaderboard...</p>
       </div>
     )
   }
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <TrophyIcon className="h-8 w-8 text-yellow-500 mr-3" />
-            Leaderboard
-          </h1>
-          <p className="text-gray-600 mt-2">
-            {leaderboard?.quiz ? `Rankings for "${leaderboard.quiz.title}"` : 'Global Rankings'} - {getTimeframeName(selectedTimeframe)}
-          </p>
-        </div>
+  const avgScore = leaderboard?.entries.length
+    ? (leaderboard.entries.reduce((acc, entry) => acc + entry.percentage, 0) / leaderboard.entries.length).toFixed(1)
+    : '0'
 
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        >
-          <FunnelIcon className="h-5 w-5 mr-2" />
-          Filters
-        </button>
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Header */}
+      <div className="card-premium p-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-warning-600 to-warning-500 shadow-glow">
+              <TrophyIcon className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-secondary-900">Leaderboard</h1>
+              <p className="text-lg text-secondary-600 mt-1">
+                {leaderboard?.quiz ? `Rankings for "${leaderboard.quiz.title}"` : 'Global Rankings'} • {getTimeframeName(selectedTimeframe)}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant={showFilters ? 'primary' : 'secondary'}
+            size="md"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+          >
+            <FunnelIcon className="h-5 w-5" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        </div>
       </div>
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="card-premium p-6 animate-fade-in-down">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Timeframe Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-secondary-700 mb-3">
                 <CalendarDaysIcon className="h-4 w-4 inline mr-1" />
                 Time Period
               </label>
               <select
                 value={selectedTimeframe}
                 onChange={(e) => handleTimeframeChange(Number(e.target.value) as LeaderboardTimeframe)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="select-field"
               >
                 <option value={LeaderboardTimeframe.ALL_TIME}>All Time</option>
                 <option value={LeaderboardTimeframe.TODAY}>Today</option>
@@ -177,14 +197,14 @@ const Leaderboard = () => {
 
             {/* Quiz Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-secondary-700 mb-3">
                 <ChartBarIcon className="h-4 w-4 inline mr-1" />
                 Quiz (Optional)
               </label>
               <select
                 value={selectedQuizId}
                 onChange={(e) => handleQuizChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="select-field"
               >
                 <option value="">All Quizzes (Global Ranking)</option>
                 {quizzes.map((quiz) => (
@@ -199,50 +219,54 @@ const Leaderboard = () => {
       )}
 
       {/* Stats Summary */}
-      {leaderboard && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <UserIcon className="h-8 w-8 text-blue-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Players</p>
-                <p className="text-2xl font-bold text-gray-900">{leaderboard.totalCount}</p>
+      {leaderboard && leaderboard.entries.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="card-premium p-6 animate-scale-in">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary-600 to-primary-500 shadow-soft">
+                <UserIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm text-secondary-600">Total Players</div>
+                <div className="text-3xl font-bold text-secondary-900">{leaderboard.totalCount}</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <TrophyIcon className="h-8 w-8 text-yellow-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Top Score</p>
-                <p className="text-2xl font-bold text-gray-900">
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '50ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-warning-600 to-warning-500 shadow-soft">
+                <TrophyIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm text-secondary-600">Top Score</div>
+                <div className="text-3xl font-bold text-secondary-900">
                   {leaderboard.entries[0]?.percentage.toFixed(1)}%
-                </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <ChartBarIcon className="h-8 w-8 text-green-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Average Score</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {leaderboard.entries.length > 0
-                    ? (leaderboard.entries.reduce((acc, entry) => acc + entry.percentage, 0) / leaderboard.entries.length).toFixed(1)
-                    : 0}%
-                </p>
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '100ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-soft">
+                <ChartBarIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm text-secondary-600">Average Score</div>
+                <div className="text-3xl font-bold text-secondary-900">{avgScore}%</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <ClockIcon className="h-8 w-8 text-purple-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Timeframe</p>
-                <p className="text-2xl font-bold text-gray-900">{getTimeframeName(selectedTimeframe)}</p>
+          <div className="card-premium p-6 animate-scale-in" style={{ animationDelay: '150ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-secondary-700 to-secondary-600 shadow-soft">
+                <ClockIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm text-secondary-600">Timeframe</div>
+                <div className="text-xl font-bold text-secondary-900">{getTimeframeName(selectedTimeframe)}</div>
               </div>
             </div>
           </div>
@@ -251,86 +275,114 @@ const Leaderboard = () => {
 
       {/* Leaderboard Table */}
       {leaderboard && leaderboard.entries.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="card-premium overflow-hidden">
+          {/* Table Header */}
+          <div className="px-8 py-6 bg-gradient-to-r from-secondary-50 to-primary-50 border-b border-secondary-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-secondary-900 flex items-center gap-2">
+                <FireIcon className="h-6 w-6 text-primary-600" />
+                Top Performers
+              </h2>
+              <Badge variant="primary" size="lg">
+                {leaderboard.totalCount} Players
+              </Badge>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-secondary-50 border-b-2 border-secondary-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Rank
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Player
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Score
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Percentage
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Duration
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary-700 uppercase tracking-wider">
                     Completed
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-secondary-200">
                 {leaderboard.entries.map((entry, index) => (
                   <tr
                     key={entry.userId}
-                    className={`hover:bg-gray-50 ${
-                      entry.rank <= 3 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''
+                    className={`hover:bg-secondary-50 transition-colors animate-fade-in-up ${
+                      entry.rank <= 3 ? 'bg-gradient-to-r from-primary-50/30 to-transparent' : ''
                     }`}
+                    style={{ animationDelay: `${index * 30}ms` }}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold ${getRankColor(entry.rank)}`}>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl text-lg font-bold bg-gradient-to-br ${getRankGradient(entry.rank)} ${getRankTextColor(entry.rank)} shadow-soft`}>
                         {getRankIcon(entry.rank)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary-700">
-                              {entry.user.firstName[0]}{entry.user.lastName[0]}
-                            </span>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center text-white font-bold shadow-soft">
+                            {entry.user.firstName[0]}{entry.user.lastName[0]}
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                        <div>
+                          <div className="text-sm font-bold text-secondary-900">
                             {entry.user.firstName} {entry.user.lastName}
+                            {entry.rank === 1 && (
+                              <SparklesIcon className="inline h-4 w-4 ml-1 text-warning-600" />
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-secondary-600">
                             {entry.user.email}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {entry.score} / {entry.totalPoints}
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="text-sm font-bold text-secondary-900">
+                        {entry.score} <span className="text-secondary-500">/ {entry.totalPoints}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="text-sm font-medium text-gray-900 mr-2">
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="text-lg font-bold text-secondary-900">
                           {entry.percentage.toFixed(1)}%
                         </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-20">
+                        <div className="flex-1 bg-secondary-200 rounded-full h-2.5 w-20">
                           <div
-                            className="bg-primary-600 h-2 rounded-full"
+                            className={`h-2.5 rounded-full bg-gradient-to-r ${
+                              entry.percentage >= 80
+                                ? 'from-accent-600 to-accent-500'
+                                : entry.percentage >= 60
+                                ? 'from-warning-600 to-warning-500'
+                                : 'from-danger-600 to-danger-500'
+                            }`}
                             style={{ width: `${Math.min(entry.percentage, 100)}%` }}
                           ></div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDuration(entry.duration)}
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-1 text-sm text-secondary-700">
+                        <ClockIcon className="h-4 w-4 text-secondary-500" />
+                        {formatDuration(entry.duration)}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(entry.completedAt).toLocaleDateString()}
+                    <td className="px-6 py-5 whitespace-nowrap text-sm text-secondary-600">
+                      {new Date(entry.completedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
                     </td>
                   </tr>
                 ))}
@@ -340,50 +392,25 @@ const Leaderboard = () => {
 
           {/* Pagination */}
           {leaderboard.totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={!leaderboard.hasPreviousPage}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(leaderboard.totalPages, currentPage + 1))}
-                  disabled={!leaderboard.hasNextPage}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing{' '}
-                    <span className="font-medium">
-                      {((currentPage - 1) * pageSize) + 1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium">
-                      {Math.min(currentPage * pageSize, leaderboard.totalCount)}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium">{leaderboard.totalCount}</span>{' '}
-                    results
-                  </p>
+            <div className="px-8 py-6 border-t border-secondary-200 bg-secondary-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-secondary-600">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, leaderboard.totalCount)} of {leaderboard.totalCount} results
                 </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={!leaderboard.hasPreviousPage}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
 
-                    {/* Page numbers */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={!leaderboard.hasPreviousPage}
+                    className="gap-1"
+                  >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex gap-1">
                     {Array.from({ length: Math.min(5, leaderboard.totalPages) }, (_, i) => {
                       let pageNum = i + 1
                       if (leaderboard.totalPages > 5) {
@@ -399,45 +426,50 @@ const Leaderboard = () => {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
                             pageNum === currentPage
-                              ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'bg-gradient-to-br from-primary-600 to-accent-600 text-white shadow-soft'
+                              : 'bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50'
                           }`}
                         >
                           {pageNum}
                         </button>
                       )
                     })}
+                  </div>
 
-                    <button
-                      onClick={() => setCurrentPage(Math.min(leaderboard.totalPages, currentPage + 1))}
-                      disabled={!leaderboard.hasNextPage}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </nav>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(leaderboard.totalPages, currentPage + 1))}
+                    disabled={!leaderboard.hasNextPage}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <TrophyIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Rankings Available</h3>
-          <p className="text-gray-500 mb-4">
+        <div className="card-premium p-20 text-center">
+          <div className="inline-flex p-6 rounded-2xl bg-gradient-to-br from-primary-50 to-accent-50 mb-6">
+            <TrophyIcon className="h-16 w-16 text-primary-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-secondary-900 mb-2">No Rankings Available</h3>
+          <p className="text-secondary-600 mb-8 max-w-md mx-auto">
             {selectedQuizId
               ? 'No completed attempts found for this quiz in the selected timeframe.'
               : 'No completed quiz attempts found in the selected timeframe.'
             }
           </p>
-          <Link
-            to="/quizzes"
-            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          >
-            Browse Quizzes
+          <Link to="/quizzes">
+            <Button variant="primary" size="lg" className="gap-2">
+              <SparklesIcon className="h-5 w-5" />
+              Browse Quizzes
+            </Button>
           </Link>
         </div>
       )}

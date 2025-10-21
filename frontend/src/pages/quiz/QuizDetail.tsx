@@ -12,8 +12,12 @@ import {
   ChevronLeftIcon,
   TrophyIcon,
   CogIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 
 const QuizDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -35,39 +39,32 @@ const QuizDetail = () => {
     }
   }
 
+  const getDifficultyBadgeVariant = (difficulty: number | string) => {
+    const label = typeof difficulty === 'number'
+      ? ['', 'Easy', 'Medium', 'Hard'][difficulty]
+      : difficulty
+
+    switch (label?.toLowerCase()) {
+      case 'easy':
+        return 'success'
+      case 'medium':
+        return 'warning'
+      case 'hard':
+        return 'danger'
+      default:
+        return 'secondary'
+    }
+  }
+
   const getDifficultyLabel = (difficulty: number | string): string => {
     if (typeof difficulty === 'number') {
-      switch (difficulty) {
-        case 1:
-          return 'Easy'
-        case 2:
-          return 'Medium'
-        case 3:
-          return 'Hard'
-        default:
-          return 'Unknown'
-      }
+      return ['Unknown', 'Easy', 'Medium', 'Hard'][difficulty] || 'Unknown'
     }
     return difficulty
   }
 
-  const getDifficultyColor = (difficulty: number | string) => {
-    const label = getDifficultyLabel(difficulty)
-    switch (label.toLowerCase()) {
-      case 'easy':
-        return 'text-green-600 bg-green-100'
-      case 'medium':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'hard':
-        return 'text-red-600 bg-red-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
-    }
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -77,13 +74,13 @@ const QuizDetail = () => {
   const getQuestionTypeLabel = (type: QuestionType): string => {
     switch (type) {
       case QuestionType.MULTIPLE_CHOICE:
-        return 'Single Correct Answer'
+        return 'Single Choice'
       case QuestionType.TRUE_FALSE:
         return 'True/False'
       case QuestionType.MULTIPLE_SELECT:
-        return 'Multiple Correct Answers'
+        return 'Multiple Choice'
       case QuestionType.SHORT_ANSWER:
-        return 'Fill in the Blank'
+        return 'Short Answer'
       default:
         return 'Unknown'
     }
@@ -91,120 +88,134 @@ const QuizDetail = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading quiz...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <Spinner size="lg" />
+        <p className="mt-4 text-secondary-600 text-lg">Loading quiz details...</p>
       </div>
     )
   }
 
   if (!quiz) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-12">
-          <p className="text-red-600">Quiz not found.</p>
-          <Link to="/quizzes" className="text-primary-600 hover:underline mt-4 inline-block">
-            Back to Quizzes
-          </Link>
+      <div className="text-center py-20">
+        <div className="inline-flex p-6 rounded-full bg-danger-100 mb-6">
+          <SparklesIcon className="h-16 w-16 text-danger-600" />
         </div>
+        <h2 className="text-2xl font-bold text-secondary-900 mb-2">Quiz Not Found</h2>
+        <p className="text-secondary-600 mb-8">The quiz you're looking for doesn't exist or has been removed.</p>
+        <Link to="/quizzes">
+          <Button variant="primary" className="gap-2">
+            <ChevronLeftIcon className="h-5 w-5" />
+            Back to Quizzes
+          </Button>
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="space-y-8 animate-fade-in-up">
       {/* Back Button */}
-      <div className="mb-6">
-        <Link
-          to="/quizzes"
-          className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ChevronLeftIcon className="h-5 w-5 mr-2" />
-          Back to Quizzes
-        </Link>
-      </div>
+      <Link to="/quizzes">
+        <button className="flex items-center gap-2 text-secondary-600 hover:text-secondary-900 transition-colors group">
+          <ChevronLeftIcon className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Back to Quizzes</span>
+        </button>
+      </Link>
 
-      {/* Quiz Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center">
-            <div className="text-4xl mr-4">{quiz.category.icon}</div>
+      {/* Quiz Header Card */}
+      <div className="card-premium p-8">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-6">
+          <div className="flex items-start gap-5">
+            <div className="text-5xl animate-bounce-subtle">{quiz.category.icon}</div>
             <div>
-              <span className="text-sm font-medium text-gray-600">{quiz.category.name}</span>
-              <h1 className="text-3xl font-bold text-gray-900 mt-1">{quiz.title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-sm font-medium text-secondary-600">{quiz.category.name}</span>
+                <Badge variant={getDifficultyBadgeVariant(quiz.difficulty)}>
+                  {getDifficultyLabel(quiz.difficulty)}
+                </Badge>
+              </div>
+              <h1 className="text-4xl font-bold text-secondary-900 mb-3">{quiz.title}</h1>
+              <p className="text-lg text-secondary-600 leading-relaxed">{quiz.description}</p>
             </div>
           </div>
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${getDifficultyColor(quiz.difficulty)}`}>
-            {getDifficultyLabel(quiz.difficulty)}
-          </span>
         </div>
 
-        <p className="text-gray-600 text-lg mb-6">{quiz.description}</p>
-
-        {/* Quiz Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <div className="flex items-center">
-            <AcademicCapIcon className="h-6 w-6 text-gray-400 mr-3" />
+        {/* Quiz Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-6 bg-gradient-to-br from-primary-50 to-accent-50 rounded-xl border border-primary-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-white shadow-soft">
+              <AcademicCapIcon className="h-6 w-6 text-primary-600" />
+            </div>
             <div>
-              <div className="text-2xl font-bold text-gray-900">{quiz.questionsCount}</div>
-              <div className="text-sm text-gray-600">Questions</div>
+              <div className="text-2xl font-bold text-secondary-900">{quiz.questionsCount}</div>
+              <div className="text-sm text-secondary-600">Questions</div>
             </div>
           </div>
 
           {quiz.timeLimit && (
-            <div className="flex items-center">
-              <ClockIcon className="h-6 w-6 text-gray-400 mr-3" />
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-white shadow-soft">
+                <ClockIcon className="h-6 w-6 text-accent-600" />
+              </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{quiz.timeLimit}</div>
-                <div className="text-sm text-gray-600">Minutes</div>
+                <div className="text-2xl font-bold text-secondary-900">{quiz.timeLimit}</div>
+                <div className="text-sm text-secondary-600">Minutes</div>
               </div>
             </div>
           )}
 
-          <div className="flex items-center">
-            <UserIcon className="h-6 w-6 text-gray-400 mr-3" />
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-white shadow-soft">
+              <UserIcon className="h-6 w-6 text-secondary-600" />
+            </div>
             <div>
-              <div className="text-sm font-medium text-gray-900">{quiz.createdBy.fullName}</div>
-              <div className="text-sm text-gray-600">Author</div>
+              <div className="text-sm font-semibold text-secondary-900">{quiz.createdBy.fullName}</div>
+              <div className="text-xs text-secondary-600">Author</div>
             </div>
           </div>
 
-          <div className="flex items-center">
-            <CalendarIcon className="h-6 w-6 text-gray-400 mr-3" />
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-white shadow-soft">
+              <CalendarIcon className="h-6 w-6 text-warning-600" />
+            </div>
             <div>
-              <div className="text-sm font-medium text-gray-900">{formatDate(quiz.createdAt).split(',')[0]}</div>
-              <div className="text-sm text-gray-600">Created</div>
+              <div className="text-sm font-semibold text-secondary-900">{formatDate(quiz.createdAt).split(',')[0]}</div>
+              <div className="text-xs text-secondary-600">Created</div>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           {user?.roles?.includes('Admin') ? (
-            <Link
-              to={`/quizzes/${quiz.id}/edit`}
-              className="flex items-center px-6 py-3 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
-            >
-              <CogIcon className="h-5 w-5 mr-2" />
-              Manage Quiz
-            </Link>
+            <>
+              <Link to={`/quizzes/${quiz.id}/edit`} className="flex-1">
+                <Button variant="primary" size="lg" className="w-full gap-2">
+                  <CogIcon className="h-5 w-5" />
+                  Manage Quiz
+                </Button>
+              </Link>
+              <Link to="/quizzes" className="flex-1">
+                <Button variant="secondary" size="lg" className="w-full gap-2">
+                  <ChevronLeftIcon className="h-5 w-5" />
+                  Back to List
+                </Button>
+              </Link>
+            </>
           ) : (
             <>
-              <Link
-                to={`/quizzes/${quiz.id}/take`}
-                className="flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                <PlayIcon className="h-5 w-5 mr-2" />
-                Take Quiz
+              <Link to={`/quizzes/${quiz.id}/take`} className="flex-1">
+                <Button variant="primary" size="lg" className="w-full gap-2">
+                  <PlayIcon className="h-5 w-5" />
+                  Start Quiz
+                </Button>
               </Link>
-              <Link
-                to="/leaderboard"
-                className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <TrophyIcon className="h-5 w-5 mr-2" />
-                View Leaderboard
+              <Link to="/leaderboard" className="flex-1">
+                <Button variant="secondary" size="lg" className="w-full gap-2">
+                  <TrophyIcon className="h-5 w-5" />
+                  View Leaderboard
+                </Button>
               </Link>
             </>
           )}
@@ -213,64 +224,84 @@ const QuizDetail = () => {
 
       {/* All Questions - Only for Admins */}
       {user?.roles?.includes('Admin') && quiz.questions && quiz.questions.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">All Questions ({quiz.questions.length})</h2>
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-secondary-900">
+              Questions Preview <span className="text-primary-600">({quiz.questions.length})</span>
+            </h2>
+            <Badge variant="primary" size="lg">Admin View</Badge>
+          </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {quiz.questions.map((question, index) => (
-              <div key={question.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg font-semibold text-gray-900">
-                      Question {index + 1}
-                    </span>
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      {getQuestionTypeLabel(question.type)}
-                    </span>
+              <div
+                key={question.id}
+                className="card-interactive p-6 animate-fade-in-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-accent-600 text-white font-bold shadow-soft">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-secondary-900 text-lg">
+                        Question {index + 1}
+                      </div>
+                      <Badge variant="primary" size="sm">
+                        {getQuestionTypeLabel(question.type)}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    {question.points} point{question.points !== 1 ? 's' : ''}
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-accent-600">
+                      {question.points} {question.points !== 1 ? 'points' : 'point'}
+                    </div>
+                    {question.timeLimit && (
+                      <div className="text-xs text-secondary-500 flex items-center gap-1 justify-end mt-1">
+                        <ClockIcon className="h-3 w-3" />
+                        {question.timeLimit}s
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <p className="text-gray-900 mb-4">{question.questionText}</p>
+                <p className="text-secondary-900 font-medium mb-4 text-lg">{question.questionText}</p>
 
                 {question.type === QuestionType.SHORT_ANSWER ? (
-                  /* Fill in the Blank - Show correct answer */
-                  <div className="p-3 bg-green-50 border border-green-200 rounded">
-                    <div className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
-                      <span className="text-green-800 font-medium">Correct Answer:</span>
-                      <span className="ml-2 text-gray-900">{question.answers[0]?.answerText}</span>
+                  <div className="p-4 bg-accent-50 border-2 border-accent-200 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <CheckCircleIcon className="h-5 w-5 text-accent-600 flex-shrink-0" />
+                      <span className="text-accent-800 font-semibold">Correct Answer:</span>
+                      <span className="text-secondary-900 font-medium">{question.answers[0]?.answerText}</span>
                     </div>
                   </div>
                 ) : (
-                  /* Multiple Choice, Multiple Select, True/False - Show all options */
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {question.answers.map((answer, answerIndex) => (
                       <div
                         key={answer.id}
-                        className={`flex items-center p-3 rounded border ${
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                           answer.isCorrect
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-gray-50 border-gray-200'
+                            ? 'bg-accent-50 border-accent-300 shadow-soft'
+                            : 'bg-secondary-50 border-secondary-200'
                         }`}
                       >
-                        <div className={`w-6 h-6 border rounded mr-3 flex items-center justify-center text-xs font-medium ${
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
                           answer.isCorrect
-                            ? 'border-green-300 bg-green-100 text-green-800'
-                            : 'border-gray-300 text-gray-600'
+                            ? 'bg-accent-600 text-white'
+                            : 'bg-secondary-300 text-secondary-700'
                         }`}>
                           {question.type === QuestionType.TRUE_FALSE
                             ? (answerIndex === 0 ? 'T' : 'F')
                             : String.fromCharCode(65 + answerIndex)
                           }
                         </div>
-                        <span className={answer.isCorrect ? 'text-green-900 font-medium' : 'text-gray-700'}>
+                        <span className={`flex-1 ${answer.isCorrect ? 'text-secondary-900 font-semibold' : 'text-secondary-700'}`}>
                           {answer.answerText}
                         </span>
                         {answer.isCorrect && (
-                          <CheckCircleIcon className="h-4 w-4 text-green-600 ml-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-accent-600 flex-shrink-0" />
                         )}
                       </div>
                     ))}
@@ -278,9 +309,12 @@ const QuizDetail = () => {
                 )}
 
                 {question.type === QuestionType.MULTIPLE_SELECT && (
-                  <p className="text-sm text-blue-600 mt-2 italic">
-                    ℹ️ Multiple answers are correct for this question
-                  </p>
+                  <div className="mt-4 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                    <p className="text-sm text-primary-700 flex items-center gap-2">
+                      <SparklesIcon className="h-4 w-4" />
+                      Multiple answers are correct for this question
+                    </p>
+                  </div>
                 )}
               </div>
             ))}

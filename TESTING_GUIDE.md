@@ -8,9 +8,9 @@ When using multiple tabs in the same browser, authentication tokens conflict and
 ### Solution: Use Different Browser Contexts
 
 #### Option 1: Different Browsers
-- **Admin**: Chrome - `http://localhost:3000`
-- **User 1**: Firefox - `http://localhost:3000`
-- **User 2**: Edge - `http://localhost:3000`
+- **Admin**: Chrome - `http://localhost:3050`
+- **User 1**: Firefox - `http://localhost:3050`
+- **User 2**: Edge - `http://localhost:3050`
 
 #### Option 2: Chrome Profiles
 - **Admin**: Regular Chrome
@@ -32,11 +32,11 @@ When using multiple tabs in the same browser, authentication tokens conflict and
 2. **Admin Flow:**
    ```
    1. Login as Admin
-   2. Go to http://localhost:3000/admin
+   2. Go to http://localhost:3050/admin
    3. Click "Create Live Quiz Room"
    4. Create a room and note the room code
    5. Click "Monitor" button
-   6. Should redirect to http://localhost:3000/admin/room/{roomcode}
+   6. Should redirect to http://localhost:3050/admin/room/{roomcode}
    ```
 
 3. **User Flow:**
