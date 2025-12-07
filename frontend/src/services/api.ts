@@ -3,8 +3,9 @@ import { useAuthStore } from '@/stores/authStore'
 import toast from 'react-hot-toast'
 
 // Create axios instance
+// Hardcoded for AWS microservices
 const api: AxiosInstance = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000',
+  baseURL: 'http://44.208.207.182',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
